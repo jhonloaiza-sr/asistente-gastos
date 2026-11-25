@@ -1,0 +1,15 @@
+[project]
+name = "asistente-gastos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=1.5.2",
+    "langchain-ollama>=1.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]
