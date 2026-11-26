@@ -1,36 +1,31 @@
-# Asistente Financiero Local (LangChain + SQLite + Ollama)
+# Asistente Financiero Local v2 (LangChain + SQLite Relacional + Ollama)
 
-Agente financiero personal 100% local construido en Python con **Programación Orientada a Objetos (POO)**, **`uv`**, **SQLite** y **LangChain v1** conectado a **Ollama** (`qwen3.5:9b`).
+Agente financiero personal 100% local construido en Python con **Programación Orientada a Objetos (POO)**, **`uv`**, **SQLite multi-tabla relacional** y **LangChain v1** conectado a **Ollama** (`qwen3.5:9b`).
 
-Permite registrar gastos en lenguaje natural, consultar totales globales o por categoría, obtener resúmenes agrupados (`GROUP BY`) y eliminar registros por ID de forma persistente.
-
-## Arquitectura Modular
+## Arquitectura Modular (3 Tablas en `gastos.db`)
 
 ```text
 asistente-gastos/
-├── main.py                      # Bucle conversacional en consola
+├── main.py                      # Bucle conversacional y alertas iniciales de tarjetas
 └── asistente_gastos/
-    ├── configuracion.py         # Clase Configuracion (modelo, ruta SQLite, categorías e instrucciones)
-    ├── base_datos.py            # Clase GestorGastos (CRUD y consultas GROUP BY en SQLite)
-    └── agente.py                # Clase AgenteGastos (LangChain: ChatOllama, @tool, create_agent e InMemorySaver)
+    ├── configuracion.py         # Clase Configuracion (modelo, ruta SQLite, categorías y prompt)
+    ├── base_datos.py            # Clase GestorGastos (tabla 'gastos' con ALTER TABLE, LIKE, GROUP BY y DELETE)
+    ├── ingresos.py              # Clase GestorIngresos (tabla 'ingresos' y balance entre 2 tablas)
+    ├── tarjetas.py              # Clase GestorTarjetas (tabla 'tarjetas', cálculo de fechas, deuda pendiente y pagos)
+    └── agente.py                # Clase AgenteGastos (LangChain: ChatOllama, 10 @tool, create_agent e InMemorySaver)
 ```
 
-## Herramientas del Agente (`@tool`)
+## Capacidades del Agente (10 herramientas `@tool`)
 
-* `registrar_gasto`: Guarda un gasto validado con fecha, categoría, descripción y monto en COP.
-* `obtener_total`: Suma el total gastado global o filtrado por categoría.
-* `listar_ultimos`: Muestra los registros más recientes con su ID.
-* `resumen_por_categoria`: Agrupa gastos y montos ordenados de mayor a menor (`GROUP BY`).
-* `eliminar_gasto`: Elimina un registro por su ID único verificando `rowcount`.
+* **Gastos:** Registrar gastos de contado o asociados a tarjeta (`tarjeta_id`, `pagado=0`), sumar totales globales o por categoría, listar últimos, agrupar con `GROUP BY` y eliminar por ID.
+* **Ingresos y Balance:** Registrar ingresos por fuente y calcular `Ingresos - Gastos = Saldo disponible`.
+* **Tarjetas de Crédito:** Registrar fechas de corte y pago, calcular días restantes con alertas de urgencia + saldo pendiente real, y saldar compras pendientes (`pagar_tarjeta`).
 
 ## Cómo ejecutarlo
 
 ```powershell
-# Instalar dependencias con uv
 uv sync
-
-# Ejecutar el asistente en consola
 uv run main.py
 ```
 
-*(Requiere [Ollama](https://ollama.com/) activo en local con el modelo `qwen3.5:9b` descargado. Tu base `gastos.db` se mantiene privada fuera de Git gracias a `.gitignore`).*
+*(Requiere [Ollama](https://ollama.com/) activo en local con `qwen3.5:9b`. `gastos.db` y `laboratorio.ipynb` quedan excluidos por `.gitignore`).*

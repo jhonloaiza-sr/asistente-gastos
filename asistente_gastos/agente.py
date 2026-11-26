@@ -12,15 +12,23 @@ from langgraph.checkpoint.memory import InMemorySaver
 from asistente_gastos.configuracion import Configuracion
 #Se importa el objeto de GestorGastos
 from asistente_gastos.base_datos import GestorGastos
+#Se importa GestorIngresos
+from asistente_gastos.ingresos import GestorIngresos
+#Se importa GestorTarjetas
+from asistente_gastos.tarjetas import GestorTarjetas
 
 #Se crea la clase AgenteGastos
 class AgenteGastos:
     #Se crea el constructor
-    def __init__(self, config: Configuracion, gestor: GestorGastos)-> None:
+    def __init__(self, config: Configuracion, gestor: GestorGastos, ingresos : GestorIngresos, tarjetas: GestorTarjetas)-> None:
         #Se guarda config
         self.config = config
         #Se guarda gestor
         self.gestor = gestor
+        #Se guarda ingresos
+        self.ingresos = ingresos
+        #Se guarda tarjetas
+        self.tarjetas = tarjetas
         #Se crea el modelo
         modelo = ChatOllama(model = self.config.modelo, reasoning = False, temperature = 0)
         #Se llama a un metodo interno _crear_herramientas()
@@ -35,12 +43,11 @@ class AgenteGastos:
 
         # Decorador '@tool': convierte esta función en una herramienta legible por LangChain.
         @tool
-        # Definimos la herramienta 1 (sin 'self' porque está dentro del método).
-        def registrar_gasto(categoria: str, descripcion: str, monto: float) -> str:
-            # Docstring claro para que el modelo clasifique cada gasto dentro de nuestras categorías válidas.
-            """Registra un gasto nuevo en SQLite. Categorías: Comida, Transporte, Servicios, Tarjetas, Ocio, Otros. Monto en pesos."""
-            # Delegamos el guardado real a nuestro objeto 'self.gestor'.
-            return self.gestor.registrar_gasto(categoria, descripcion, monto)
+        # Agregamos 'tarjeta: str = ""' opcional al final para asociar compras a crédito cuando aplique.
+        def registrar_gasto(categoria: str, descripcion: str, monto: float, tarjeta: str = "") -> str:
+            """Registra un gasto en SQLite. Categorías: Comida, Transporte, Servicios, Tarjetas, Ocio, Otros. Si pagó con tarjeta de crédito (ej. 'Bancolombia'), pon su nombre en 'tarjeta'; si fue efectivo/débito, déjalo vacío."""
+            # Pasamos los 4 argumentos (incluida 'tarjeta') hacia 'self.gestor.registrar_gasto'.
+            return self.gestor.registrar_gasto(categoria, descripcion, monto, tarjeta)
 
         # Decorador '@tool' para la herramienta 2.
         @tool
@@ -82,9 +89,62 @@ class AgenteGastos:
             """
             #Retorna
             return self.gestor.eliminar_gasto(id_gasto)
-        
 
-        return [registrar_gasto, obtener_total, listar_ultimos, resumen_por_categoria, eliminar_gasto]
+        #Se define la tool 
+        @tool
+        #Se define la funcion resgistrar_ingresos
+        def registrar_ingreso(fuente : str, monto : float)-> str:
+            #Docstring
+            """
+            Registras la cantidad de ingresos en pesos colombias proveniente de sus fuentes ejemplo salario.
+            """
+            #retorna
+            return self.ingresos.registrar_ingreso(fuente, monto)
+
+        #Se define la tool
+        @tool
+        #Se define la funcion de obtener_balance
+        def obtener_balance()-> str:
+            #Docstring
+            """
+            Extrae los ingresos totales y los gastos totales, y retorna el saldo a favor que tiene el usuario.
+            """
+            #Retorna
+            return self.ingresos.obtener_balance()
+
+        #Se define la tool 
+        @tool
+        #Se define la funcion de registrar_tarjeta
+        def registrar_tarjeta(nombre : str, dia_corte : int, dia_pago : int)-> str:
+            #Docstring
+            """
+            Registras en la base de datos las tarjetas ya se de credito o debito donde debes llenar el nombre ejemplo Bancolombia, dia de corte y dia de pago.
+            """
+            #Retorno
+            return self.tarjetas.registrar_tarjeta(nombre, dia_corte, dia_pago)
+
+        #Se define la tool
+        @tool
+        #Se define la funcion de consultar tarjetas
+        def consultar_tarjetas()-> str: 
+            #Docstring
+            """
+            Extraes la informacion correspondiente de la tarjeta de interes, nombre, fecha de corte y fecha de pago.
+            """
+            #Retorno
+            return self.tarjetas.consultar_tarjetas()
+
+        
+        # Decorador '@tool' para la herramienta 10: marcar como pagados los gastos de una tarjeta.
+        @tool
+        # Recibimos el nombre de la tarjeta cuyo saldo pendiente se va a saldar.
+        def pagar_tarjeta(nombre_tarjeta: str) -> str:
+            """Marca como pagados los gastos pendientes de una tarjeta de crédito usando su nombre (ej. 'Bancolombia')."""
+            # Delegamos la actualización UPDATE al gestor de tarjetas.
+            return self.tarjetas.pagar_tarjeta(nombre_tarjeta)
+
+        # Devolvemos la lista completa con las 10 herramientas disponibles para LangChain.
+        return [registrar_gasto, obtener_total, listar_ultimos, resumen_por_categoria, eliminar_gasto, registrar_ingreso, obtener_balance, registrar_tarjeta, consultar_tarjetas, pagar_tarjeta]
         
 
 

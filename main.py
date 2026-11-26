@@ -1,39 +1,65 @@
-#Importamos la clase de configuracion
+# Importamos la clase 'Configuracion' desde 'configuracion.py'.
 from asistente_gastos.configuracion import Configuracion
-#Importamos la clase de gestorgastos
+
+# Importamos 'GestorGastos' desde 'base_datos.py'.
 from asistente_gastos.base_datos import GestorGastos
-#Importamos la clase de agentegastos
+
+# Importamos 'GestorIngresos' desde 'ingresos.py'.
+from asistente_gastos.ingresos import GestorIngresos
+
+# Importamos 'GestorTarjetas' desde 'tarjetas.py'.
+from asistente_gastos.tarjetas import GestorTarjetas
+
+# Importamos 'AgenteGastos' desde 'agente.py'.
 from asistente_gastos.agente import AgenteGastos
 
-#Dedinimos la funcion main
-def main()-> None:
-    #Creamos el objeto de configuracion
+
+# Definimos la función principal que conecta todos los módulos y arranca el chat en consola.
+def main() -> None:
+    # Creamos la configuración y los 3 gestores apuntando al mismo archivo 'gastos.db'.
     config = Configuracion()
-    #Creamos el objeto de gestorgastos
+    # Creamos el gestor de gastos (ejecuta ALTER TABLE automático si tu DB ya existía).
     gestor = GestorGastos(config.ruta_db)
-    #Creamos el objeto de agente
-    agente = AgenteGastos(config, gestor)
+    # Creamos el gestor de ingresos y balance.
+    ingresos = GestorIngresos(config.ruta_db)
+    # Creamos el gestor de tarjetas de crédito.
+    tarjetas = GestorTarjetas(config.ruta_db)
+    # Conectamos los 3 gestores dentro del agente LangChain con las 10 herramientas.
+    agente = AgenteGastos(config, gestor, ingresos, tarjetas)
 
-    #Mostramos el resumen de la configuracion
+    # Mostramos bienvenida, configuración y el estado actual de tarjetas apenas inicia la app.
+    print("ASISTENTE FINANCIERO LOCAL (Escribe 'salir' para terminar)")
+    # Imprimimos resumen del modelo y categorías.
     print(config.mostrar_resumen())
+    # Imprimimos de una vez las alertas de tarjetas pendientes al arrancar.
+    print("\nESTADO DE TARJETAS")
+    # Consultamos y mostramos las tarjetas registradas.
+    print(tarjetas.consultar_tarjetas())
 
-    #Se inicia el bucle iterativo
+    # Iniciamos el bucle conversacional infinito.
     while True:
-        #Se ingresa la pregunta
-        pregunta = input("\nTú: ").strip()
-        #Validacion de terminar conversacion
-        if pregunta.lower() in ("salir", "exit"):
-            #Mensaje de salida
-            print("Estare atento a cualquier inquietud o registro.")
-            break
-        #Validacion si no coloco nada
-        if not pregunta:
-            #Volvemos al inicio del while
-            continue
-        #Se realiza la pregunta al agente
-        respuesta = agente.responder(pregunta)
-        #Se imprime la respuesta
-        print(respuesta)
+        # Pedimos la pregunta una sola vez limpiando espacios sobrantes.
+        pregunta: str = input("\nTú: ").strip()
 
+        # Comprobamos si el usuario quiere cerrar el programa.
+        if pregunta.lower() in ("salir", "exit"):
+            # Nos despedimos por consola.
+            print("Estaré atento a cualquier inquietud o registro.")
+            # Salimos del bucle 'while'.
+            break
+
+        # Si presionó Enter en blanco, volvemos a pedir entrada.
+        if not pregunta:
+            # Saltamos a la siguiente vuelta sin molestar al agente.
+            continue
+
+        # Enviamos la petición al agente LangChain e imprimimos su respuesta.
+        respuesta: str = agente.responder(pregunta)
+        # Mostramos la respuesta en pantalla.
+        print(f"\nAsistente: {respuesta}")
+
+
+# Este bloque asegura que 'main()' solo arranque al ejecutar este archivo directamente.
 if __name__ == "__main__":
+    # Ejecutamos la función principal.
     main()

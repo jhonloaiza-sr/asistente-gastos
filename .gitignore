@@ -10,4 +10,4 @@ wheels/
 .venv
 .ipynb_checkpoints/
 laboratorio.ipynb
-.db
+*.db
