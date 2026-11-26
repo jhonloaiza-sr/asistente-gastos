@@ -16,11 +16,13 @@ from asistente_gastos.base_datos import GestorGastos
 from asistente_gastos.ingresos import GestorIngresos
 #Se importa GestorTarjetas
 from asistente_gastos.tarjetas import GestorTarjetas
+#Se importa OjoRecibos
+from asistente_gastos.vision import OjoRecibos
 
 #Se crea la clase AgenteGastos
 class AgenteGastos:
     #Se crea el constructor
-    def __init__(self, config: Configuracion, gestor: GestorGastos, ingresos : GestorIngresos, tarjetas: GestorTarjetas)-> None:
+    def __init__(self, config: Configuracion, gestor: GestorGastos, ingresos : GestorIngresos, tarjetas: GestorTarjetas, ojo: OjoRecibos)-> None:
         #Se guarda config
         self.config = config
         #Se guarda gestor
@@ -29,6 +31,8 @@ class AgenteGastos:
         self.ingresos = ingresos
         #Se guarda tarjetas
         self.tarjetas = tarjetas
+        #Se guarda ojo
+        self.ojo = ojo
         #Se crea el modelo
         modelo = ChatOllama(model = self.config.modelo, reasoning = False, temperature = 0)
         #Se llama a un metodo interno _crear_herramientas()
@@ -143,8 +147,18 @@ class AgenteGastos:
             # Delegamos la actualización UPDATE al gestor de tarjetas.
             return self.tarjetas.pagar_tarjeta(nombre_tarjeta)
 
+        #Decorador '@tool' para la herramienta 11: extraer informacion de recibos o facturas.
+        @tool
+        # Recibimos la ruta de la imagen
+        def leer_recibo(ruta_imagen :str)-> str:
+            """Toma una imagen o un pantallazo de un recibo desde la ruta local y extrae comercio, categoria y total.
+            """
+            #Retorno
+            return self.ojo.leer_recibo(ruta_imagen)
+
         # Devolvemos la lista completa con las 10 herramientas disponibles para LangChain.
-        return [registrar_gasto, obtener_total, listar_ultimos, resumen_por_categoria, eliminar_gasto, registrar_ingreso, obtener_balance, registrar_tarjeta, consultar_tarjetas, pagar_tarjeta]
+        return [registrar_gasto, obtener_total, listar_ultimos, resumen_por_categoria, eliminar_gasto, registrar_ingreso, obtener_balance, registrar_tarjeta, consultar_tarjetas, pagar_tarjeta, leer_recibo]
+    
         
 
 

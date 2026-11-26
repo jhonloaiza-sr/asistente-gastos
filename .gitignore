@@ -11,3 +11,6 @@ wheels/
 .ipynb_checkpoints/
 laboratorio.ipynb
 *.db
+*.png
+*.jpg
+*.jpeg

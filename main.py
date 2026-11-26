@@ -16,6 +16,9 @@ from asistente_gastos.agente import AgenteGastos
 #Importamos 'OidoWhisper' desde 'audio.py'
 from asistente_gastos.audio import OidoWhisper
 
+# Importamos el lector visual de recibos desde 'vision.py'.
+from asistente_gastos.vision import OjoRecibos
+
 
 # Definimos la función principal que conecta todos los módulos y arranca el chat en consola.
 def main() -> None:
@@ -28,7 +31,10 @@ def main() -> None:
     # Creamos el gestor de tarjetas de crédito.
     tarjetas = GestorTarjetas(config.ruta_db)
     # Conectamos los 3 gestores dentro del agente LangChain con las 10 herramientas.
-    agente = AgenteGastos(config, gestor, ingresos, tarjetas)
+    # Creamos el lector de recibos por visión usando el modelo local configurado.
+    ojo = OjoRecibos(modelo=config.modelo)
+    # Conectamos los 3 gestores SQLite y el lector visual dentro del agente LangChain (11 herramientas).
+    agente = AgenteGastos(config, gestor, ingresos, tarjetas, ojo)
     # Instanciamos el oido Whisper una sola vez al arrancar para no recargarlo en cada pregunta
     oido = OidoWhisper(tamano_modelo= "medium")
 

@@ -41,6 +41,7 @@ dependencies = [
     { name = "faster-whisper" },
     { name = "langchain" },
     { name = "langchain-ollama" },
+    { name = "ollama" },
     { name = "sounddevice" },
 ]
 
@@ -54,6 +55,7 @@ requires-dist = [
     { name = "faster-whisper", specifier = ">=1.2.1" },
     { name = "langchain", specifier = ">=1.5.2" },
     { name = "langchain-ollama", specifier = ">=1.2.0" },
+    { name = "ollama", specifier = ">=0.6.3" },
     { name = "sounddevice", specifier = ">=0.5.6" },
 ]
 
