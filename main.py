@@ -13,6 +13,9 @@ from asistente_gastos.tarjetas import GestorTarjetas
 # Importamos 'AgenteGastos' desde 'agente.py'.
 from asistente_gastos.agente import AgenteGastos
 
+#Importamos 'OidoWhisper' desde 'audio.py'
+from asistente_gastos.audio import OidoWhisper
+
 
 # Definimos la función principal que conecta todos los módulos y arranca el chat en consola.
 def main() -> None:
@@ -26,9 +29,11 @@ def main() -> None:
     tarjetas = GestorTarjetas(config.ruta_db)
     # Conectamos los 3 gestores dentro del agente LangChain con las 10 herramientas.
     agente = AgenteGastos(config, gestor, ingresos, tarjetas)
+    # Instanciamos el oido Whisper una sola vez al arrancar para no recargarlo en cada pregunta
+    oido = OidoWhisper(tamano_modelo= "medium")
 
     # Mostramos bienvenida, configuración y el estado actual de tarjetas apenas inicia la app.
-    print("ASISTENTE FINANCIERO LOCAL (Escribe 'salir' para terminar)")
+    print("ASISTENTE FINANCIERO LOCAL (Escribe 'v' para hablar o 'salir' para terminar)")
     # Imprimimos resumen del modelo y categorías.
     print(config.mostrar_resumen())
     # Imprimimos de una vez las alertas de tarjetas pendientes al arrancar.
@@ -52,6 +57,17 @@ def main() -> None:
         if not pregunta:
             # Saltamos a la siguiente vuelta sin molestar al agente.
             continue
+
+        # Si el usuario escribe 'v', activamos el micrófono durante 6 segundos para dictar por voz.
+        if pregunta.lower() == "v":
+            # Escuchamos por micrófono y guardamos la transcripción dentro de 'pregunta'.
+            pregunta = oido.escuchar_libre()
+            # Imprimimos lo que entendió Whisper para que veas lo que se enviará al agente.
+            print(f"Tú (voz): {pregunta}")
+            # Si hubo silencio y no capturó nada, volvemos al inicio del bucle sin molestar al agente.
+            if not pregunta:
+                # Saltamos a la siguiente vuelta del 'while'.
+                continue
 
         # Enviamos la petición al agente LangChain e imprimimos su respuesta.
         respuesta: str = agente.responder(pregunta)
